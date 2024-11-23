@@ -48,7 +48,7 @@ class Venue(db.Model):
     seeking_venue = db.Column(db.Boolean, default=False)  # Add seeking_venue field
     seeking_description = db.Column(db.String(500))  # Add seeking_description field 
     # Relationships
-    shows = db.relationship('Show', backref='artist', lazy=True)  # Define relationship to Show model
+    shows = db.relationship('Show', backref='venue', lazy=True)  # Define relationship to Show model
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
