@@ -57,6 +57,15 @@
             <label for="seeking_description">Seeking Description</label>
             {{ form.seeking_description(class_ = 'form-control', placeholder='Description', autofocus = true) }}
        </div>
+       <div class="form-group">
+            <label for="city">City</label>
+            {{ form.city(class_ = 'form-control', placeholder='City', autofocus = true) }}
+        </div>
+        <div class="form-group">
+            <label for="state">State</label>
+            {{ form.state(class_ = 'form-control', placeholder='State')   
+          }}
+        </div>
       <input type="submit" value="Create Venue" class="btn btn-primary btn-lg btn-block">
     </form>
   </div>
