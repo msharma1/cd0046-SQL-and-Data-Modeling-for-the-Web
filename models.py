@@ -40,10 +40,11 @@ class Artist(db.Model):
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate - DONE
     website = db.Column(db.String(120))
-  # Add website field
+    # Add website field
     seeking_venue = db.Column(db.Boolean, default=False)  # Add seeking_venue field
     seeking_description = db.Column(db.String(500))  # Add seeking_description field
-
+    # Attempting BONUS task of having artist availability
+    available_times = db.Column(db.ARRAY(db.String))  # Add available_times field
     # Relationships
     shows = db.relationship('Show', backref='artist', lazy=True)  # Define relationship to Show model
 

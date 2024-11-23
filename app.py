@@ -485,23 +485,32 @@ def create_show_submission():
   error = False
   form = ShowForm(request.form)
   try:
-    show = Show(
-      artist_id=form.artist_id.data,
-      venue_id=form.venue_id.data,
-      start_time=form.start_time.data
-    )
-    db.session.add(show)
-    db.session.commit()
-  except:
-    error = True
-    db.session.rollback()
+      artist = Artist.query.get(form.artist_id.data)
+      venue = Venue.query.get(form.venue_id.data)
+      
+      # BONUS Task - Check if the show time is within the artist's available times
+      show_time = form.start_time.data
+      artist_available_times = artist.available_times
+      if str(show_time) not in artist_available_times:
+          flash('Show time is outside of the artist\'s availability.')
+          return redirect(url_for('create_shows'))
+
+      show = Show(
+          artist_id=form.artist_id.data,
+          venue_id=form.venue_id.data,
+          start_time=form.start_time.data
+      )
+      db.session.add(show)
+      db.session.commit()
+  except Exception as e:
+      error = True
+      db.session.rollback()
+      print(f"Error creating show: {e}")
   finally:
-    db.session.close()
-    if error:
-      # TODO: on unsuccessful db insert, flash an error instead. - DONE
+      db.session.close()
+  if error:
       flash('An error occurred. Show could not be listed.')
-    else:
-      # on successful db insert, flash success
+  else:
       flash('Show was successfully listed!')
   return render_template('pages/home.html')
 
