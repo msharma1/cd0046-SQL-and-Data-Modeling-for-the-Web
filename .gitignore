@@ -2,6 +2,6 @@
 bin/
 __pycache__/
 lib/
-pyenv.cfg
+pyvenv.cfg
 include/
 venv/
