@@ -1,8 +1,7 @@
-# forms.py
 from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp, ValidationError
 
 class ShowForm(FlaskForm):
     artist_id = StringField(
@@ -84,10 +83,10 @@ class VenueForm(FlaskForm):
         'address', validators=[DataRequired()]
     )
     phone = StringField(
-        'phone'
+        'phone', validators=[DataRequired(), Regexp(r'^\d{3}-\d{3}-\d{4}$', message='Invalid phone number format')]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[URL(message='Invalid URL')]
     )
     genres = SelectMultipleField(
         # TODO implement enum restriction
@@ -118,7 +117,7 @@ class VenueForm(FlaskForm):
         'facebook_link', validators=[URL()]
     )
     website = StringField(
-        'website'
+        'website', validators=[URL(message='Invalid URL')]
     )
 
     seeking_talent = BooleanField( 'seeking_talent' )
@@ -193,11 +192,10 @@ class ArtistForm(FlaskForm):
         ]
     )
     phone = StringField(
-        # TODO implement validation logic for state
-        'phone'
+        'phone', validators=[DataRequired(), Regexp(r'^\d{3}-\d{3}-\d{4}$', message='Invalid phone number format')]
     )
     image_link = StringField(
-        'image_link'
+        'image_link', validators=[URL(message='Invalid URL')]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
@@ -229,7 +227,7 @@ class ArtistForm(FlaskForm):
      )
 
     website = StringField(
-        'website'
+        'website', validators=[URL(message='Invalid URL')]
      )
 
     seeking_venue = BooleanField( 'seeking_venue' )
@@ -238,8 +236,19 @@ class ArtistForm(FlaskForm):
             'seeking_description'
      )
 
-    # New field for artist availability
+    def validate_available_times(form, field):
+        """
+        Custom validator for available_times field.
+        Checks if each time string is in the correct format (YYYY-MM-DD HH:MM:SS).
+        """
+        for time_str in field.data.split(","):
+            time_str = time_str.strip()
+            try:
+                datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                raise ValidationError('Invalid time format. Please use YYYY-MM-DD HH:MM:SS')
+
     available_times = StringField(
         'available_times',
-        validators=[DataRequired()]  # You might want to add a custom validator for the time format
+        validators=[DataRequired(), validate_available_times]  # Apply the custom validator
     )

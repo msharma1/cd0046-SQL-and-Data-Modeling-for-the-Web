@@ -330,7 +330,7 @@ def edit_artist(artist_id):
   form.city.data = artist.city
   form.state.data = artist.state
   form.phone.data = artist.phone
-  form.website_link.data = artist.website_link
+  form.website.data = artist.website
   form.facebook_link.data = artist.facebook_link
   form.seeking_venue.data = artist.seeking_venue
   form.seeking_description.data = artist.seeking_description
@@ -350,7 +350,7 @@ def edit_artist_submission(artist_id):
     artist.city = form.city.data
     artist.state = form.state.data
     artist.phone = form.phone.data
-    artist.website_link = form.website_link.data
+    artist.website = form.website.data
     artist.facebook_link = form.facebook_link.data
     artist.seeking_venue = form.seeking_venue.data
     artist.seeking_description = form.seeking_description.data
@@ -382,7 +382,7 @@ def edit_venue(venue_id):
   form.city.data = venue.city
   form.state.data = venue.state
   form.phone.data = venue.phone
-  form.website_link.data = venue.website_link
+  form.website.data = venue.website
   form.facebook_link.data = venue.facebook_link
   form.seeking_talent.data = venue.seeking_talent
   form.seeking_description.data = venue.seeking_description
@@ -403,7 +403,7 @@ def edit_venue_submission(venue_id):
     venue.city = form.city.data
     venue.state = form.state.data
     venue.phone = form.phone.data
-    venue.website_link = form.website_link.data
+    venue.website = form.website.data
     venue.facebook_link = form.facebook_link.data
     venue.seeking_talent = form.seeking_talent.data
     venue.seeking_description = form.seeking_description.data
