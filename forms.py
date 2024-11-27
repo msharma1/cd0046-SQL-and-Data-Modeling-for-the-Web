@@ -1,14 +1,14 @@
 from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL, Regexp, ValidationError
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp, ValidationError, Optional
 
 class ShowForm(FlaskForm):
     artist_id = StringField(
-        'artist_id'
+        'artist_id', validators=[DataRequired()]
     )
     venue_id = StringField(
-        'venue_id'
+        'venue_id', validators=[DataRequired()]
     )
     start_time = DateTimeField(
         'start_time',
@@ -86,7 +86,7 @@ class VenueForm(FlaskForm):
         'phone', validators=[DataRequired(), Regexp(r'^\d{3}-\d{3}-\d{4}$', message='Invalid phone number format')]
     )
     image_link = StringField(
-        'image_link', validators=[URL(message='Invalid URL')]
+        'image_link', validators=[Optional(), URL(message='Invalid URL')]
     )
     genres = SelectMultipleField(
         # TODO implement enum restriction
@@ -114,10 +114,10 @@ class VenueForm(FlaskForm):
         ]
     )
     facebook_link = StringField(
-        'facebook_link', validators=[URL()]
+        'facebook_link', validators=[Optional(), URL(message='Invalid URL')]
     )
     website = StringField(
-        'website', validators=[URL(message='Invalid URL')]
+        'website', validators=[Optional(), URL(message='Invalid URL')]
     )
 
     seeking_talent = BooleanField( 'seeking_talent' )
@@ -195,7 +195,7 @@ class ArtistForm(FlaskForm):
         'phone', validators=[DataRequired(), Regexp(r'^\d{3}-\d{3}-\d{4}$', message='Invalid phone number format')]
     )
     image_link = StringField(
-        'image_link', validators=[URL(message='Invalid URL')]
+        'image_link', validators=[Optional(), URL(message='Invalid URL')]
     )
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
@@ -222,12 +222,12 @@ class ArtistForm(FlaskForm):
         ]
      )
     facebook_link = StringField(
-        # TODO implement enum restriction
-        'facebook_link', validators=[URL()]
+        # TODO implement enum restriction - DONE
+        'facebook_link', validators=[Optional(), URL(message='Invalid URL')]
      )
 
     website = StringField(
-        'website', validators=[URL(message='Invalid URL')]
+        'website', validators=[Optional(), URL(message='Invalid URL')]
      )
 
     seeking_venue = BooleanField( 'seeking_venue' )

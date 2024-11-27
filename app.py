@@ -22,6 +22,7 @@ from flask_migrate import Migrate
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
+app.config['WTF_CSRF_ENABLED'] = True
 db.init_app(app)  # Bind the db object to the app
 migrate = Migrate(app, db)  # Initialize Migrate
 
@@ -123,24 +124,30 @@ def show_venue(venue_id):
   if not venue:
       return render_template('errors/404.html'), 404
 
+  # Use JOINs to fetch past and upcoming shows
+  past_shows_query = db.session.query(Show).join(Artist).filter(Show.venue_id == venue_id).filter(
+      Show.start_time < datetime.now()
+  ).all()
   past_shows = []
+  for show in past_shows_query:
+      past_shows.append({
+          "artist_id": show.artist_id,
+          "artist_name": show.artist.name,
+          "artist_image_link": show.artist.image_link,
+          "start_time": str(show.start_time)
+      })
+
+  upcoming_shows_query = db.session.query(Show).join(Artist).filter(Show.venue_id == venue_id).filter(
+      Show.start_time > datetime.now()
+  ).all()
   upcoming_shows = []
-  now = datetime.now()
-  for show in venue.shows:
-      if show.start_time < now:
-          past_shows.append({
-              "artist_id": show.artist_id,
-              "artist_name": show.artist.name,
-              "artist_image_link": show.artist.image_link,
-              "start_time": str(show.start_time)
-          })
-      elif show.start_time > now:
-          upcoming_shows.append({
-              "artist_id": show.artist_id,
-              "artist_name": show.artist.name,
-              "artist_image_link": show.artist.image_link,
-              "start_time": str(show.start_time)
-          })
+  for show in upcoming_shows_query:
+      upcoming_shows.append({
+          "artist_id": show.artist_id,
+          "artist_name": show.artist.name,
+          "artist_image_link": show.artist.image_link,
+          "start_time": str(show.start_time)
+      })
   data = {
       "id": venue.id,
       "name": venue.name,
@@ -187,7 +194,7 @@ def create_venue_submission():
               genres=form.genres.data,
               facebook_link=form.facebook_link.data,
               image_link=form.image_link.data,
-              website_link=form.website_link.data,
+              website=form.website.data,
               seeking_talent=form.seeking_talent.data,
               seeking_description=form.seeking_description.data
           )
@@ -286,24 +293,30 @@ def show_artist(artist_id):
   if not artist:
       return render_template('errors/404.html'), 404
 
+  # Use JOINs to fetch past and upcoming shows
+  past_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id == artist_id).filter(
+      Show.start_time < datetime.now()
+  ).all()
   past_shows = []
+  for show in past_shows_query:
+      past_shows.append({
+          "venue_id": show.venue_id,
+          "venue_name": show.venue.name,
+          "venue_image_link": show.venue.image_link,
+          "start_time": str(show.start_time)
+      })
+
+  upcoming_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id == artist_id).filter(
+      Show.start_time > datetime.now()
+  ).all()
   upcoming_shows = []
-  now = datetime.now()
-  for show in artist.shows:
-      if show.start_time < now:
-          past_shows.append({
-              "venue_id": show.venue_id,
-              "venue_name": show.venue.name,
-              "venue_image_link": show.venue.image_link,
-              "start_time": str(show.start_time)
-          })
-      elif show.start_time > now:
-          upcoming_shows.append({
-              "venue_id": show.venue_id,
-              "venue_name": show.venue.name,
-              "venue_image_link": show.venue.image_link,
-              "start_time": str(show.start_time)
-          })
+  for show in upcoming_shows_query:
+      upcoming_shows.append({
+          "venue_id": show.venue_id,
+          "venue_name": show.venue.name,
+          "venue_image_link": show.venue.image_link,
+          "start_time": str(show.start_time)
+      })
 
   data = {
       "id": artist.id,
@@ -311,7 +324,7 @@ def show_artist(artist_id):
       "genres": artist.genres,
       "city": artist.city,
       "state": artist.state,
-      "phone": artist.phone, 
+      "phone": artist.phone,
       "website": artist.website,
       "facebook_link": artist.facebook_link,
       "seeking_venue": artist.seeking_venue,
@@ -350,22 +363,38 @@ def edit_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
   # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes - DONE
+  # artist record with ID <artist_id> using the new attributes
   error = False
   artist = Artist.query.get(artist_id)
   form = ArtistForm(request.form)
   try:
-    artist.name = form.name.data
-    artist.genres = form.genres.data
-    artist.city = form.city.data
-    artist.state = form.state.data
-    artist.phone = form.phone.data
-    artist.website = form.website.data
-    artist.facebook_link = form.facebook_link.data
-    artist.seeking_venue = form.seeking_venue.data
-    artist.seeking_description = form.seeking_description.data
-    artist.image_link = form.image_link.data
-    db.session.commit()
+      artist.name = form.name.data
+      artist.genres = form.genres.data
+      artist.city = form.city.data
+      artist.state = form.state.data
+      artist.phone = form.phone.data
+      artist.website = form.website.data
+      artist.facebook_link = form.facebook_link.data
+      artist.seeking_venue = form.seeking_venue.data
+      artist.seeking_description = form.seeking_description.data
+      artist.image_link = form.image_link.data
+      
+      # Access the available_times data from the form
+      available_times_str = form.available_times.data  
+      
+      # Convert comma-separated string to list of datetime objects
+      available_times = []
+      for time_str in available_times_str.split(","):
+          time_str = time_str.strip()
+          try:
+              available_times.append(datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S'))
+          except ValueError:
+              # Handle invalid time format (optional)
+              flash('Invalid time format in available times. Please use YYYY-MM-DD HH:MM:SS')
+              return redirect(url_for('edit_artist', artist_id=artist_id))
+
+      artist.available_times = available_times  # Update the artist's available times
+      db.session.commit()
   except:
     error = True
     db.session.rollback()
@@ -376,7 +405,7 @@ def edit_artist_submission(artist_id):
   else:
     flash('Artist was successfully updated!')
   return redirect(url_for('show_artist', artist_id=artist_id))
-
+  
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
@@ -441,13 +470,27 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   # called upon submitting the new artist listing form
-  # TODO: insert form data as a new Venue record in the db, instead - DONE
-  # TODO: modify data to be the data object returned from db insertion - DONE
+  # TODO: insert form data as a new Venue record in the db, instead
+  # TODO: modify data to be the data object returned from db insertion
 
   form = ArtistForm()  # Create the form object here
   if form.validate_on_submit():  # Check if the form is valid
       error = False
       try:
+          # Access the available_times data from the form
+          available_times_str = form.available_times.data  
+          
+          # Convert comma-separated string to list of datetime objects
+          available_times = []
+          for time_str in available_times_str.split(","):
+              time_str = time_str.strip()
+              try:
+                  available_times.append(datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S'))
+              except ValueError:
+                  # Handle invalid time format (optional)
+                  flash('Invalid time format in available times. Please use YYYY-MM-DD HH:MM:SS')
+                  return render_template('forms/new_artist.html', form=form)
+
           artist = Artist(
               name=form.name.data,
               city=form.city.data,
@@ -456,10 +499,10 @@ def create_artist_submission():
               genres=form.genres.data,
               facebook_link=form.facebook_link.data,
               image_link=form.image_link.data,
-              website_link=form.website_link.data,
+              website=form.website.data,
               seeking_venue=form.seeking_venue.data,
               seeking_description=form.seeking_description.data,
-              available_times=form.available_times.data
+              available_times=available_times  # Store the list of datetime objects
           )
           db.session.add(artist)
           db.session.commit()
@@ -469,14 +512,14 @@ def create_artist_submission():
           error = True
           db.session.rollback()
           print(f"Error creating artist: {e}")  # Print the error for debugging
-          # TODO: on unsuccessful db insert, flash an error instead. - DONE
+          # TODO: on unsuccessful db insert, flash an error instead.
           # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
           flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
       finally:
           db.session.close()
   else:
       # TODO: on unsuccessful db insert, flash an error instead.
-      # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.') - DONE
+      # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
       flash('An error occurred. Artist ' + request.form['name'] + ' could not be listed.')
       for field, errors in form.errors.items():
           for error in errors:
@@ -517,11 +560,21 @@ def create_show_submission():
   form = ShowForm(request.form)
   try:
       artist = Artist.query.get(form.artist_id.data)
+      if not artist:  # Check if artist exists
+          flash('Invalid artist ID.')
+          return redirect(url_for('create_shows'))
+
       venue = Venue.query.get(form.venue_id.data)
-      
-      # BONUS Task - Check if the show time is within the artist's available times
+      if not venue:  # Check if venue exists
+          flash('Invalid venue ID.')
+          return redirect(url_for('create_shows'))
+
       show_time = form.start_time.data
       artist_available_times = artist.available_times
+      if artist_available_times is None:  # Check if available_times is None
+          flash('Artist has no available times set.')
+          return redirect(url_for('create_shows'))
+
       if str(show_time) not in artist_available_times:
           flash('Show time is outside of the artist\'s availability.')
           return redirect(url_for('create_shows'))
